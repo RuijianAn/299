@@ -1,0 +1,88 @@
+"""
+Implement the Bellman-Ford algorithm in Python
+Use a list of lists to represent vertices.
+[[pre, distance], [pre, distance], ...]
+"""
+import math
+import random
+import time
+
+
+class Graph:
+    """
+    Model a graph G = (V, E)
+    """
+    def __init__(self, num, edge_dic):
+        """
+        Create a new graph.
+
+        @param num: int
+
+        @param edge_dic: dict
+        @rtype: None
+        """
+        self.lst = [[None, None] for _ in range(num)]
+        self.num = num
+        self.dict = edge_dic
+
+    def relax(self, lst):
+        """
+        Relax the edges between v1 and v2.
+
+        @param self: Graph
+        @param lst: list
+        @rtype: None
+        """
+        edge_weight = self.dict[lst]
+        start_idx = lst[0]
+        end_idx = lst[1]
+        if self.lst[end_idx][1] > self.lst[start_idx][1] + edge_weight:
+            self.lst[end_idx][1] = self.lst[start_idx][1] + edge_weight
+            self.lst[end_idx][0] = end_idx
+
+
+def bellman_ford(g, idx):
+    """
+    Run the Bellman-Ford algorithm.
+    @param g: Graph
+    @param idx: int
+    @rtype: Bool
+    """
+
+    # Initialization
+    for i in range(g.num):
+        g.lst[i][0] = None
+        g.lst[i][1] = math.inf
+        if i == idx:
+            g.lst[i][1] = 0
+
+    # Relax each edge V - 1 times
+    for _ in range(len(g.lst) - 1):
+        for key in g.dict:
+            g.relax(key)
+
+    # Check negative cycles
+    for k in g.dict:
+        edge_weight = g.dict[k]
+        start_idx = k[0]
+        end_idx = k[1]
+        if g.lst[end_idx][1] > g.lst[start_idx][1] + edge_weight:
+            return False
+
+    return True
+
+start_time = time.time()
+
+a = 500
+dic = {}
+k = random.randint(0, a * a)
+for i in range(k):
+    x = random.randint(0, a - 1)
+    y = random.randint(0, a - 1)
+    dic[(x, y)] = random.randint(0, 100)
+print(dic)
+g1 = Graph(a, dic)
+bellman_ford(g1, 0)
+print(g1.lst)
+
+print("--- %s seconds ---" % (time.time() - start_time))
