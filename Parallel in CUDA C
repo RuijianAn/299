@@ -1,0 +1,89 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include<math.h>
+
+#define N 200 /*Define the number of vertices in the graph*/
+
+
+/*Initilization:
+Set the attribute 'd' of all the vertices except source vertex to be INFINITY.
+Set the attribute 'd' of source index to be 0.
+*/
+__global__ void Initial(float *A, int i){
+			  int idx = threadIdx.x;
+			  A[idx] = INFINITY;
+			  if (idx == i){
+			  	A[idx] = 0.0;
+			  }
+}
+
+/*Create the new matrix: I set A[i][j] to be i + j just for testing the correctness of the program.*/
+__global__ void newmatrix(float *M){
+			  int i = threadIdx.x;
+			  int j = threadIdx.y;
+			  M[i + N * j]= (i+j);
+}
+
+
+/*Relax:
+For all vertices in the graph, update the attribute 'd'.
+For vertex j, replace the value of dist[j] with min(dist[j], dist[i] + A[i][j])
+where i is the vertex that is adjacent to j and minimize the dist[i] + A[i][j].
+*/
+__global__ void Relax(float *dist, float *matrix){
+			  int idx = threadIdx.x;
+			  float minimum = dist[idx];
+			  int i;
+			  for (i=0;i<N;i++){
+			  	   if (i != idx){
+			  	   	if (dist[i] + matrix[i + N * idx] < minimum){
+			  	   		minimum = dist[i] + matrix[i + N * idx]; 
+			  	   	}
+			  	   }
+			  }
+			  dist[idx] = minimum;
+}
+
+int main(){
+	
+/*Create a dist array and transfer it to GPU.*/
+float *A;
+float *d_A;
+
+
+A = (float *)malloc(sizeof(float)*N);
+cudaMalloc((void **)&d_A, (N)*sizeof(float));
+cudaMemcpy(d_A, &A, N*sizeof(float), cudaMemcpyHostToDevice);
+
+
+/*Initialize the dist_gpu.*/
+Initial<<<1, N>>>(d_A, 0);
+
+/*
+Create a matrix and transfer it to GPU */
+float *M;
+float *d_M;
+M = (float *)malloc(sizeof(float)*(N*N));
+cudaMalloc((void **)&d_M, (N*N)*sizeof(float));
+cudaMemcpy(d_M, &M, N*N*sizeof(float), cudaMemcpyHostToDevice);
+
+/*Set the value of the matrix*/
+dim3 numthread(N, N);
+newmatrix<<<1, numthread>>>(d_M);
+
+/*#Relax each edge for |V| - 1 times.*/
+int i;
+for (i=0; i<(N-1);i++){
+	 Relax<<<1, N>>>(d_A, d_M);
+}
+
+/*Copy the result back to CPU*/
+cudaMemcpy(A, d_A, (N)*sizeof(float), cudaMemcpyDeviceToHost);
+
+/*Print the result*/
+int x;
+for (x=0;x<N;x++){
+    printf("%f\n", A[x]);
+}
+}
+
