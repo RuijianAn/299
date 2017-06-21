@@ -1,0 +1,128 @@
+import pycuda.driver as cuda
+import pycuda.autoinit
+from pycuda.compiler import SourceModule
+import time
+import numpy
+from pycuda.compiler import DynamicSourceModule
+import pycuda.autoinit
+
+"""
+The graph G = (V, E) is represented by a matrix A.
+The vertex in the graph is numbered from 0,1,..., |V|-1, and
+A[i][j] represents the weight of the edge between vertex i and vertex j.
+
+In the Bellman-Ford algorithm, each vertex has an attribute 'd' to record
+the distance from itself to the source vertex at the moment.
+I use an array 'dist' to record it where dist[i] represents the attribute 'd' of vertex i."
+"""
+
+
+#Initilization:
+#Set the attribute 'd' of all the vertices except source vertex to be INFINITY.
+#Set the attribute 'd' of source index to be 0.
+initi = SourceModule("""
+  __global__ void ini(float *a, int i)
+  {
+    #include <math.h>
+    int idx = threadIdx.x;
+    a[idx] = INFINITY;
+    if (idx == i){
+       a[idx] = 0.0;
+    }      
+  }
+  """)
+
+initilization = initi.get_function("ini")
+
+
+
+relaxreduction_cu = '''
+
+__global__ void redu(float *dist, float *matrix, int v, int id, float *value)
+         {
+          int idx = threadIdx.x;
+          value[idx + id * v] = dist[idx] + matrix[idx + v * id];
+          value[id + id * v] = dist[id];
+          __syncthreads();
+
+          for (int s=v/2; s>0; s>>=1){
+              if (idx < s){
+                if (value[idx + s + id * v] < value[idx + id * v]){
+                    value[idx + id * v] = value[idx + s + id * v];
+                }
+                __syncthreads();
+              }
+          }
+         }
+
+__global__ void relaxa(float *dist, float *matrix, int v, float *value)
+      {
+       int idx = threadIdx.x;
+       redu<<<1, v>>>(dist, matrix, v, threadIdx.x, value);
+       dist[idx] = value[0 + v * threadIdx.x];
+      }
+
+'''
+mod = DynamicSourceModule(relaxreduction_cu)
+
+relax = mod.get_function("relaxa")
+
+
+#The number of vertices in the graph.
+num_of_vertex = 1024
+
+value = numpy.random.rand(num_of_vertex, num_of_vertex)
+value = value.astype(numpy.float32)
+value_gpu = cuda.mem_alloc(value.nbytes)
+cuda.memcpy_htod(value_gpu, value)
+
+#The number of vertices in the graph which can be passed into kernel.
+v_numpy = numpy.int32(num_of_vertex)
+
+#Create a dist array.
+dist = numpy.random.rand(num_of_vertex)
+dist = dist.astype(numpy.float32)
+
+#Transfer the dist to GPU.
+dist_gpu = cuda.mem_alloc(dist.nbytes)
+cuda.memcpy_htod(dist_gpu, dist)
+
+#Create a random matrix.
+matrix = numpy.load('1024.npy')
+matrix = matrix.astype(numpy.float32)
+
+#Transfer the matrix to GPU.
+matrix_gpu = cuda.mem_alloc(matrix.nbytes)
+cuda.memcpy_htod(matrix_gpu, matrix)
+
+#Declare the index of the source vertex.
+src_idx = numpy.int32(0)
+
+#Record the start time for GPU.
+start_time_gpu = time.time()
+#Initialize the dist_gpu.
+initilization(dist_gpu, src_idx, block=(num_of_vertex,1,1))
+
+#Relax each edge for |V| - 1 times.
+for i in range(num_of_vertex - 1):
+    relax(dist_gpu, matrix_gpu, v_numpy, value_gpu, block=(num_of_vertex,1,1))
+
+#Copy the dist back to CPU.
+dist_result = numpy.empty_like(dist)
+cuda.memcpy_dtoh(dist_result, dist_gpu)
+
+#Print the result and running time.
+print matrix
+print dist_result
+print("--- %s seconds ---" % (time.time() - start_time_gpu))
+result = numpy.load('1024o.npy')
+print numpy.array_equal(dist_result, result)
+
+
+"""#Record the start time for CPU.
+start_time_cpu = time.time()
+
+#Print the result and running time.
+print bellman_ford(dist, matrix, 0)
+print("--- %s seconds ---" % (time.time() - start_time_cpu))"""
+
