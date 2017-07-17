@@ -109,11 +109,11 @@ num_of_vertex = 2048
 v_numpy = numpy.int32(num_of_vertex)
 
 src_idx = numpy.int32(0)
-
+#First part of the matirx
 m1 = numpy.random.randint(1, 99, size=(num_of_vertex/2, num_of_vertex))
 
 m1 = m1.astype(numpy.int32)
-
+#Second part of the matrix
 m2 = numpy.random.randint(1, 99, size=(num_of_vertex/2, num_of_vertex))
 
 m2 = m2.astype(numpy.int32)
@@ -167,13 +167,13 @@ initilization(dist_gpu, src_idx, mask_gpu, v_numpy, mask1_gpu, grid=(num_of_vert
 
 
 
-
+#Create two streams
 s1 = drv.Stream()
 s2 = drv.Stream()
 
 drv.memcpy_htod_async(m1_gpu, m1_pin, s1)
 drv.memcpy_htod_async(m2_gpu, m2_pin, s2)
-
+#First process the first part of the matrix 
 for i in range(num_of_vertex - 1):
     relaxation1(dist_gpu, m1_gpu, v_numpy, mask_gpu, mask1_gpu, counter_gpu, grid=(num_of_vertex /32, num_of_vertex/32, 1), block=(32,16,1), stream=s1)
     temp = numpy.empty_like(counter)
