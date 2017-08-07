@@ -42,10 +42,7 @@ mod1 = SourceModule("""
      row[i] = matrix[i + v * k];
      col[j] = matrix[k + v * j];
 
-     int temp;
-     temp = fminf(matrix[i + v * j], row[i] + col[j]);
-     matrix[i + v * j] = temp;
-
+     matrix[i + v * j] = fminf(matrix[i + v * j], row[i] + col[j]);
     }
     """)
 
