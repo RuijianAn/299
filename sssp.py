@@ -15,6 +15,38 @@ import pycuda.driver as drv
 
 
 
+
+
+"""
+Content
+1. Sequential Bellman-Ford algorithm
+Parallel implementation
+2. Initialization
+3. Relaxation
+Version 1     - Frontier propagation
+Version 2.1   - Multiple edges per thread with non-coalesced access
+Version 2.2   - Multiple edges per thread with coalesced access
+Version 3.1   - Adjacency matrix for sparse graphs
+Version 3.2   - Efficient representation of sparse graphs
+Version 4.1.1 - Incoming edges using a loop
+Version 4.1.2 - Incoming edges using a child kernel
+Version 4.2   - Outgoing edges 
+4. Swap
+
+5.1. Main fucntion 
+5.2. Main function using streams
+
+"""
+
+
+
+
+
+
+
+
+
+
 """
 The graph G = (V, E) is represented by a matrix A.
 The vertex in the graph is numbered from 0,1,..., |V|-1, and
