@@ -1,10 +1,3 @@
-//
-//  main.c
-//  bf
-//
-//  Created by 安睿健 on 2017-08-20.
-//  Copyright © 2017 安睿健. All rights reserved.
-//
 
 
 #include <pthread.h>
