@@ -5,7 +5,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <time.h>
-#define NUM_THREADS 48
+#define NUM_THREADS 4
 #define N_V 1024
 
 
