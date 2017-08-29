@@ -215,45 +215,4 @@ int main(){
     pthread_exit(NULL);
 }
 */
-/*
-int main(){
-    int j, p, i;
-    for (p=0; p<N_V; p++)
-    {
-        for (j=0; j<N_V; j++)
-        {
-            m[p][j] = rand() % 40;
-        }
-    }
-    clock_t begin = clock();
-    
-    for (j=0; j<N_V; j++)
-        d[j] = INT_MAX;
-    d[0] = 0;
-    
-    for (p=0; p<N_V; p++)
-    {
-        for (i=0; i<N_V; i++)
-        {
-            for (j=0; j<N_V; j++)
-            {
-                if (d[i] == INT_MAX || d[i] > d[j] + m[j][i])
-                {
-                    d[i] = d[j] + m[j][j];
-                }
-            }
-            
-        }
-    }
-    clock_t end = clock();
-    
-    double time = (double)(end - begin)/CLOCKS_PER_SEC;
-    printf("%f\n", time);
 
-    return 0;
-}
-
-
-
-
-*/
