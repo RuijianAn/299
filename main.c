@@ -119,7 +119,7 @@ int main(){
         pthread_create(&thread[i], NULL, ini, (void *) i);
     }
     for (i=0; i<NUM_THREADS; i++)
-        pthread_join(thread[0], NULL);
+        pthread_join(thread[i], NULL);
     d[0] = 0;
     mask[0] = 1;
     flag = 1;
